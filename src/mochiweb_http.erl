@@ -6,7 +6,7 @@
 -module(mochiweb_http).
 -author('bob@mochimedia.com').
 -export([start/1, start_link/1, stop/0, stop/1]).
--export([loop/2]).
+-export([loop/3]).
 -export([after_response/2, reentry/1]).
 -export([parse_range_request/1, range_skip_length/2]).
 
@@ -46,9 +46,9 @@ start(Options) ->
 start_link(Options) ->
     mochiweb_socket_server:start_link(parse_options(Options)).
 
-loop(Socket, Body) ->
+loop(Socket, Body, Headers) ->
     ok = mochiweb_socket:setopts(Socket, [{packet, http}]),
-    request(Socket, Body).
+    request(Socket, Body, Headers).
 
 -ifdef(gen_tcp_r15b_workaround).
 -define(R15B_GEN_TCP_FIX, {tcp_error,_,emsgsize} ->
@@ -60,16 +60,16 @@ loop(Socket, Body) ->
 -define(R15B_GEN_TCP_FIX,).
 -endif.
 
-request(Socket, Body) ->
+request(Socket, Body, Headers) ->
     ok = mochiweb_socket:setopts(Socket, [{active, once}]),
     receive
         {Protocol, _, {http_request, Method, Path, Version}} when Protocol == http orelse Protocol == ssl ->
             ok = mochiweb_socket:setopts(Socket, [{packet, httph}]),
-            headers(Socket, {Method, Path, Version}, [], Body, 0);
+            headers(Socket, {Method, Path, Version}, Headers, Body, 0);
         {Protocol, _, {http_error, "\r\n"}} when Protocol == http orelse Protocol == ssl ->
-            request(Socket, Body);
+            request(Socket, Body, Headers);
         {Protocol, _, {http_error, "\n"}} when Protocol == http orelse Protocol == ssl ->
-            request(Socket, Body);
+            request(Socket, Body, Headers);
         {tcp_closed, _} ->
             mochiweb_socket:close(Socket),
             exit(normal);
