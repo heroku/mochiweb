@@ -100,6 +100,15 @@ headers(Socket, Request, Headers, Body, HeaderCount) ->
             Req = new_request(Socket, Request, Headers),
             call_body(Body, Req),
             ?MODULE:after_response(Body, Req);
+        {Protocol, _, {http_header, _, "X-Forwarded-For", _, Value}} when Protocol == http orelse Protocol == ssl ->
+            case lists:keyfind("X-Forwarded-For", 1, Headers) of
+                {"X-Forwarded-For", Val} ->
+                    headers(Socket, Request, [{"X-Forwarded-For", Value ++ ", " ++ Val} | Headers], Body,
+                            1 + HeaderCount);
+                false ->
+                    headers(Socket, Request, [{"X-Forwarded-For", Value} | Headers], Body,
+                            1 + HeaderCount)
+            end;
         {Protocol, _, {http_header, _, Name, _, Value}} when Protocol == http orelse Protocol == ssl ->
             headers(Socket, Request, [{Name, Value} | Headers], Body,
                     1 + HeaderCount);

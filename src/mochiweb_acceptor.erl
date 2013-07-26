@@ -21,8 +21,8 @@ init(Server, Listen, Loop, ProxyProtocol) ->
             Headers = case ProxyProtocol of
                           true ->
                               ok = mochiweb_socket:setopts(Socket, [{active, once}, {packet, line}, list]),
-                              {ok, SrcAddr} = parse_peername_from_proxy_line(Socket),
-                              [{"X-Forwarded-For", SrcAddr}];
+                              {ok, SrcAddr, ProxyPort} = parse_peername_from_proxy_line(Socket),
+                              [{"X-Forwarded-For", SrcAddr}, {"Proxy-Proto-Port", ProxyPort}];
                           false ->
                               []
                       end,
@@ -54,8 +54,8 @@ parse_peername_from_proxy_line(Sock) ->
 	receive
 		{TcpOrSsl, Sock, "PROXY " ++ ProxyLine} when TcpOrSsl =:= tcp; TcpOrSsl =:= ssl ->
 			case string:tokens(ProxyLine, "\r\n ") of
-				[_Proto, SrcAddrStr, _DestAddr, SrcPortStr, _DestPort] ->
-					{ok, SrcAddrStr};
+				[_Proto, SrcAddrStr, _DestAddr, SrcPortStr, DestPort] ->
+					{ok, SrcAddrStr, DestPort};
 				_ ->
 					{error, "got malformed proxy line: ~p", [ProxyLine]}
 			end;
