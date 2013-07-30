@@ -21,8 +21,15 @@ init(Server, Listen, Loop, ProxyProtocol) ->
             Headers = case ProxyProtocol of
                           true ->
                               ok = mochiweb_socket:setopts(Socket, [{active, once}, {packet, line}, list]),
-                              {ok, SrcAddr, ProxyPort} = parse_peername_from_proxy_line(Socket),
-                              [{"X-Forwarded-For", SrcAddr}, {"Proxy-Proto-Port", ProxyPort}];
+                              case parse_peername_from_proxy_line(Socket) of
+                                  {ok, SrcAddr, ProxyPort} ->
+                                      [{"X-Forwarded-For", SrcAddr}, {"Proxy-Proto-Port", ProxyPort}];
+                                  {error, Reason} ->
+                                      error_logger:error_report([{application, mochiweb},
+                                                                 "Proxy protocol line parse error: ",
+                                                                 Reason]),
+                                      exit({error, proxy_protocol_parse_failed})
+                              end;
                           false ->
                               []
                       end,
@@ -57,21 +64,19 @@ parse_peername_from_proxy_line(Sock) ->
 				[_Proto, SrcAddrStr, _DestAddr, SrcPortStr, DestPort] ->
 					{ok, SrcAddrStr, DestPort};
 				_ ->
-					{error, "got malformed proxy line: ~p", [ProxyLine]}
+
+					{error, lists:flatten(io_lib:format("got malformed proxy line: ~p", [ProxyLine]))}
 			end;
 		{_, Sock, FirstLine} ->
-
-			{error, ["<h2>PROXY line expected</h2>",
-				"Mochiweb configured to expect PROXY line first, as per ",
-				"<a href=\"http://haproxy.1wt.eu/download/1.5/doc/proxy-protocol.txt\">the haproxy proxy protocol spec</a>, ",
-				"but first line received was:<br/><pre>\r\n",
-				FirstLine,
-				"\r\n</pre>"]};
+			{error, lists:flatten(io_lib:format(["<h2>PROXY line expected</h2>",
+                                                 "Mochiweb configured to expect PROXY line first, as per ",
+                                                 "<a href=\"http://haproxy.1wt.eu/download/1.5/doc/proxy-protocol.txt\">the haproxy proxy protocol spec</a>, ",
+                                                 "but first line received was:<br/><pre>\r\n",
+                                                 FirstLine,
+                                                 "\r\n</pre>"]))};
 		Other ->
-
-			{error, "got from proxy unexpected: ~p", [Other]}
+			{error, lists:flatten(io_lib:format("got from proxy unexpected: ~p", [Other]))}
 	after 5000 ->
-
 		{error, "timeout on receiving proxy line from upstream proxy"}
 	end.
 
