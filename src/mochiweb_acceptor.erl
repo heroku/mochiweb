@@ -68,12 +68,12 @@ parse_peername_from_proxy_line(Sock) ->
 					{error, lists:flatten(io_lib:format("got malformed proxy line: ~p", [ProxyLine]))}
 			end;
 		{_, Sock, FirstLine} ->
-			{error, lists:flatten(io_lib:format(["<h2>PROXY line expected</h2>",
-                                                 "Mochiweb configured to expect PROXY line first, as per ",
-                                                 "<a href=\"http://haproxy.1wt.eu/download/1.5/doc/proxy-protocol.txt\">the haproxy proxy protocol spec</a>, ",
-                                                 "but first line received was:<br/><pre>\r\n",
-                                                 FirstLine,
-                                                 "\r\n</pre>"]))};
+			{error, lists:flatten(["<h2>PROXY line expected</h2>",
+                                   "Mochiweb configured to expect PROXY line first, as per ",
+                                   "<a href=\"http://haproxy.1wt.eu/download/1.5/doc/proxy-protocol.txt\">the haproxy proxy protocol spec</a>, ",
+                                   "but first line received was:<br/><pre>\r\n",
+                                   FirstLine,
+                                   "\r\n</pre>"])};
 		Other ->
 			{error, lists:flatten(io_lib:format("got from proxy unexpected: ~p", [Other]))}
 	after 5000 ->
