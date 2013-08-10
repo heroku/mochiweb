@@ -46,8 +46,8 @@ uri({absoluteURI, _Protocol, _Host, _Port, Uri}) ->
 uri('*') ->
     "*";
 %% Erlang decode_packet will return this for requests like `CONNECT host:port`
-uri({scheme, Hostname, Port}) ->
-    Hostname ++ ":" ++ Port;
+uri({scheme, _Hostname, _Port}=Authority) ->
+    Authority;
 uri(HttpString) when is_list(HttpString) ->
     HttpString.
 

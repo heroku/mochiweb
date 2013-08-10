@@ -108,6 +108,10 @@ get(peer, {?MODULE, [Socket, _Method, _RawPath, _Version, _Headers]}=THIS) ->
         {error, enotconn} ->
             exit(normal)
     end;
+get(path, {?MODULE, [_Socket, _Method, {scheme, Hostname, Port}, _Version, _Headers]}) ->
+    Path = Hostname ++ ":" ++ Port,
+    put(?SAVE_PATH, Path),
+    Path;
 get(path, {?MODULE, [_Socket, _Method, RawPath, _Version, _Headers]}) ->
     case erlang:get(?SAVE_PATH) of
         undefined ->
