@@ -108,6 +108,10 @@ get(peer, {?MODULE, [Socket, _Method, _RawPath, _Version, _Headers]}=THIS) ->
         {error, enotconn} ->
             exit(normal)
     end;
+get(path, {?MODULE, [_Socket, _Method, {scheme, Hostname, Port}, _Version, _Headers]}) ->
+    Path = Hostname ++ ":" ++ Port,
+    put(?SAVE_PATH, Path),
+    Path;
 get(path, {?MODULE, [_Socket, _Method, RawPath, _Version, _Headers]}) ->
     case erlang:get(?SAVE_PATH) of
         undefined ->
@@ -672,7 +676,12 @@ range_parts({file, IoDevice}, Ranges) ->
     LocNums = lists:foldr(F, [], Ranges),
     {ok, Data} = file:pread(IoDevice, LocNums),
     Bodies = lists:zipwith(fun ({Skip, Length}, PartialBody) ->
-                                   {Skip, Skip + Length - 1, PartialBody}
+                                   case Length of
+                                       0 ->
+                                           {Skip, Skip, <<>>};
+                                       _ ->
+                                           {Skip, Skip + Length - 1, PartialBody}
+                                   end
                            end,
                            LocNums, Data),
     {Bodies, Size};
