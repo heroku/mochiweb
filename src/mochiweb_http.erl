@@ -59,7 +59,8 @@ loop(Socket, Body, Headers) ->
 request(Socket, Body, Headers) ->
     ok = mochiweb_socket:setopts(Socket, [{active, once}]),
     receive
-        {Protocol, _, {http_request, Method, Path, Version}} when Protocol == http orelse Protocol == ssl ->
+        {Protocol, _, {http_request, Method, Path, Version}} when (Protocol == http orelse Protocol == ssl)
+                                                                andalso (is_atom(Method) orelse length(Method) < 128) ->
             ok = mochiweb_socket:setopts(Socket, [{packet, httph}]),
             headers(Socket, {Method, Path, Version}, Headers, Body, 0);
         {Protocol, _, {http_error, "\r\n"}} when Protocol == http orelse Protocol == ssl ->
