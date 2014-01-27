@@ -25,9 +25,9 @@ init(Server, Listen, Loop, ProxyProtocol) ->
                                   {ok, SrcAddr, ProxyPort} ->
                                       [{"X-Forwarded-For", SrcAddr}, {"Proxy-Proto-Port", ProxyPort}];
                                   {error, Reason} ->
-                                      error_logger:error_report([{application, mochiweb},
-                                                                 "Proxy protocol line parse error: ",
-                                                                 Reason]),
+                                      error_logger:info_report([{application, mochiweb},
+                                                                "Proxy protocol line parse error: ",
+                                                                Reason]),
                                       exit({error, proxy_protocol_parse_failed})
                               end;
                           false ->
