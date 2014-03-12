@@ -22,8 +22,8 @@ init(Server, Listen, Loop, ProxyProtocol) ->
                           true ->
                               ok = mochiweb_socket:setopts(Socket, [{active, once}, {packet, line}, list]),
                               case parse_peername_from_proxy_line(Socket) of
-                                  {ok, SrcAddr, ProxyPort} ->
-                                      [{"X-Forwarded-For", SrcAddr}, {"Proxy-Proto-Port", ProxyPort}];
+                                  {ok, SrcAddr, SrcPort, ProxyPort} ->
+                                      [{"X-Forwarded-For", SrcAddr}, {"X-Forwarded-Port", SrcPort}, {"Proxy-Proto-Port", ProxyPort}];
                                   {error, Reason} ->
                                       error_logger:info_report([{application, mochiweb},
                                                                 "Proxy protocol line parse error: ",
@@ -62,7 +62,7 @@ parse_peername_from_proxy_line(Sock) ->
 		{TcpOrSsl, Sock, "PROXY " ++ ProxyLine} when TcpOrSsl =:= tcp; TcpOrSsl =:= ssl ->
 			case string:tokens(ProxyLine, "\r\n ") of
 				[_Proto, SrcAddrStr, _DestAddr, SrcPortStr, DestPort] ->
-					{ok, SrcAddrStr, DestPort};
+					{ok, SrcAddrStr, SrcPortStr, DestPort};
 				_ ->
 
 					{error, lists:flatten(io_lib:format("got malformed proxy line: ~p", [ProxyLine]))}
