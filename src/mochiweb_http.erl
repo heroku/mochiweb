@@ -153,6 +153,7 @@ new_request(Socket, Request, RevHeaders) ->
 
 after_response(Body, Req) ->
     Socket = Req:get(socket),
+    Headers = Req:get(headers),
     case Req:should_close() of
         true ->
             mochiweb_socket:close(Socket),
@@ -160,7 +161,7 @@ after_response(Body, Req) ->
         false ->
             Req:cleanup(),
             erlang:garbage_collect(),
-            ?MODULE:loop(Socket, Body)
+            ?MODULE:loop(Socket, Body, Headers)
     end.
 
 parse_range_request("bytes=0-") ->
